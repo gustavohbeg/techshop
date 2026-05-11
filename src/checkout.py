@@ -1,96 +1,113 @@
-# Este arquivo contém código propositalmente ruim para fins educacionais em uma aula de refatoração.
-# MÁS PRÁTICAS APLICADAS:
-# 1. Função única com múltiplas responsabilidades (validação, cálculo, pagamento).
-# 2. Nomes de variáveis ruins e não descritivos (x1, val, p, temp, res).
-# 3. Falta de tipagem de dados (sem type hints).
-# 4. Manipulação de dicionários brutos em vez de modelos de dados (sem Pydantic).
-# 5. Aninhamento profundo de condicionais (código espaguete).
-# 6. "Números mágicos" espalhados pelo código (valores fixos sem explicação).
-# 7. Mock de chamadas externas e validações com prints.
-# 8. Falta de tratamento de erros robusto.
+# checkout.py - Refatorado
 
-# Simulação de uma biblioteca de requisições HTTP para não adicionar dependências reais.
-class FakeResponse:
-    def __init__(self, status_code, json_data):
-        self.status_code = status_code
-        self._json_data = json_data
-    def json(self):
-        return self._json_data
+from typing import List, Dict, Any
+from .models import CartItem, UserData
 
-def fake_post(url, json):
-    """Simula uma chamada POST para uma API de pagamento."""
-    print(f"--- Simulando POST para API de pagamento: {url} ---")
-    if json['valor_total'] > 0 and json['valor_total'] < 9999:
-        print("--- Pagamento APROVADO (simulado) ---")
-        return FakeResponse(200, {"status": "pagamento_aprovado", "transacao_id": "xyz123abc"})
-    else:
-        print("--- Pagamento RECUSADO (simulado) ---")
-        return FakeResponse(400, {"status": "pagamento_recusado", "motivo": "valor_invalido"})
+# --- Protocolos para Injeção de Dependência ---
 
+class StockValidatorProtocol:
+    def validate(self, items: List[CartItem]) -> bool: ...
 
-def processar_tudo(cart_data, u_data):
-    """
-    Função gigante e mal escrita para processar um checkout completo.
-    Recebe dados do carrinho e do usuário em formato de dicionário.
-    """
-    print("Iniciando processamento de checkout...")
-    val = 0
-    
-    if cart_data and 'items' in cart_data:
-        # Validação de estoque e cálculo de valor
-        for p in cart_data['items']:
-            print(f"Verificando estoque para o produto ID: {p['id']}...")
-            # Estoque mockado
-            estoque_disponivel = 10
-            if p['qtd'] <= estoque_disponivel:
-                print(f"Estoque OK para {p['qtd']} unidades do produto {p['id']}.")
-                x1 = p['preco'] * p['qtd']
-                val = val + x1
-            else:
-                print(f"ERRO: Estoque insuficiente para o produto {p['id']}.")
-                return "Erro de estoque"
+class ShippingServiceProtocol:
+    def calculate(self, items: List[CartItem]) -> float: ...
 
-        # Cálculo de frete e descontos
-        if val > 0:
-            print(f"Valor parcial: {val}")
-            # Frete fixo
-            frete = 15.50
-            val = val + frete
-            print(f"Valor com frete: {val}")
+class DiscountServiceProtocol:
+    def calculate(self, total_value: float, user: UserData) -> float: ...
 
-            # Lógica de desconto aninhada
-            if val > 200:
-                if u_data['vip']:
-                    print("Aplicando desconto VIP de 15%")
-                    val = val * 0.85
-                else:
-                    print("Aplicando desconto padrão de 5%")
-                    val = val * 0.95
-            
-            # Simulação de chamada para API de pagamento
-            print("Preparando para processar pagamento...")
-            dados_pagamento = {
-                "id_usuario": u_data['id'],
-                "valor_total": round(val, 2),
-                "info_cartao": "XXXX-XXXX-XXXX-1234" # Dados sensíveis hardcoded
-            }
-            
-            res = fake_post("https://api.pagamento.exemplo/processar", json=dados_pagamento)
-            
-            if res.status_code == 200:
-                temp = res.json()
-                if temp['status'] == 'pagamento_aprovado':
-                    print(f"Checkout finalizado com sucesso! ID da transação: {temp['transacao_id']}")
-                    return {"sucesso": True, "transacao": temp['transacao_id']}
-                else:
-                    print("Ocorreu um problema com o pagamento.")
-                    return {"sucesso": False, "erro": "problema_na_api_de_pagamento"}
-            else:
-                print("API de pagamento retornou um erro.")
-                return {"sucesso": False, "erro": "api_pagamento_offline"}
+class PaymentServiceProtocol:
+    def process(self, user: UserData, final_amount: float) -> Dict[str, Any]: ...
+
+# --- Implementações Concretas dos Serviços ---
+
+class StockValidator:
+    """Valida o estoque dos itens (implementação mock)."""
+    def validate(self, items: List[CartItem]) -> bool:
+        print("--- Validando estoque... ---")
+        for item in items:
+            # Lógica de estoque mockada
+            mock_stock = 10
+            if item.quantity > mock_stock:
+                print(f"ERRO: Estoque insuficiente para o produto {item.product.id}.")
+                raise ValueError(f"Estoque insuficiente para {item.product.name}")
+        print("--- Estoque OK. ---")
+        return True
+
+class ShippingService:
+    """Calcula o frete (valor fixo para este exemplo)."""
+    _SHIPPING_FEE = 15.50
+
+    def calculate(self, items: List[CartItem]) -> float:
+        print(f"--- Calculando frete fixo de R$ {self._SHIPPING_FEE}... ---")
+        return self._SHIPPING_FEE
+
+class DiscountService:
+    """Calcula descontos com base no valor total e no tipo de usuário."""
+    def calculate(self, total_value: float, user: UserData) -> float:
+        print("--- Calculando descontos... ---")
+        if total_value > 1000:
+            print("--- Aplicando desconto de 20% (compras > R$ 1000) ---")
+            return total_value * 0.80
+        if total_value > 500:
+            print("--- Aplicando desconto de 10% (compras > R$ 500) ---")
+            return total_value * 0.90
+        if user.is_vip:
+            print("--- Aplicando desconto de 15% (usuário VIP) ---")
+            return total_value * 0.85
+        return total_value
+
+class FakePaymentAPI:
+    """Simula uma API de pagamento externa."""
+    def charge(self, amount: float, user_id: int) -> Dict[str, Any]:
+        print(f"--- Processando pagamento de R$ {amount:.2f} para o usuário {user_id}... ---")
+        if 0 < amount < 9999:
+            print("--- Pagamento APROVADO (simulado) ---")
+            return {"status": "pagamento_aprovado", "transaction_id": "xyz123abc"}
         else:
-            print("Carrinho vazio, nenhum valor a processar.")
-            return "Carrinho vazio"
-    else:
-        print("Dados do carrinho estão vazios ou em formato inválido.")
-        return "Dados inválidos"
+            print("--- Pagamento RECUSADO (simulado) ---")
+            raise ConnectionError("Falha ao processar pagamento: valor inválido.")
+
+class PaymentService:
+    """Serviço que interage com a API de pagamento."""
+    def __init__(self, payment_api: FakePaymentAPI):
+        self.payment_api = payment_api
+
+    def process(self, user: UserData, final_amount: float) -> Dict[str, Any]:
+        return self.payment_api.charge(amount=final_amount, user_id=user.id)
+
+# --- Orquestrador do Checkout ---
+
+def process_checkout(
+    cart_items: List[CartItem],
+    user_data: UserData,
+    stock_validator: StockValidatorProtocol,
+    shipping_service: ShippingServiceProtocol,
+    discount_service: DiscountServiceProtocol,
+    payment_service: PaymentServiceProtocol,
+) -> Dict[str, Any]:
+    """
+    Orquestra o processo de checkout utilizando injeção de dependência.
+    """
+    print("--- Iniciando processo de checkout refatorado ---")
+    
+    # 1. Validar estoque
+    stock_validator.validate(cart_items)
+
+    # 2. Calcular total inicial
+    subtotal = sum(item.product.price * item.quantity for item in cart_items)
+    print(f"Subtotal: R$ {subtotal:.2f}")
+
+    # 3. Calcular frete
+    shipping_cost = shipping_service.calculate(cart_items)
+    total_with_shipping = subtotal + shipping_cost
+    print(f"Total com frete: R$ {total_with_shipping:.2f}")
+
+    # 4. Aplicar descontos
+    final_amount = discount_service.calculate(total_with_shipping, user_data)
+    print(f"Valor final após descontos: R$ {final_amount:.2f}")
+
+    # 5. Processar pagamento
+    payment_result = payment_service.process(user_data, round(final_amount, 2))
+
+    print(f"--- Checkout finalizado! Resultado: {payment_result} ---")
+    return {"success": True, "payment_details": payment_result}
+
