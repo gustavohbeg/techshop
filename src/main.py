@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.staticfiles import StaticFiles
 from typing import List, Dict, Any
 
 from .models import CartItem, UserData, Product
@@ -17,6 +18,9 @@ app = FastAPI(
     description="API para um e-commerce de tecnologia, com gerenciamento de carrinho e checkout.",
     version="1.0.0",
 )
+
+# Monta a pasta 'static' para servir arquivos estáticos (nosso frontend)
+app.mount("/app", StaticFiles(directory="static", html=True), name="static")
 
 # --- Simulação de um "banco de dados" em memória para o carrinho ---
 # Em uma aplicação real, isso seria substituído por um banco de dados (Redis, PostgreSQL, etc.)
@@ -95,3 +99,4 @@ def perform_checkout(user_data: UserData, cart: ShoppingCart = Depends(get_cart)
     except Exception as e:
         # Captura genérica para outros erros inesperados
         raise HTTPException(status_code=500, detail=f"Ocorreu um erro inesperado: {e}")
+
