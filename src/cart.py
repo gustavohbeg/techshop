@@ -1,10 +1,12 @@
 from typing import List
 from src.models import CartItem, Product
 
+
 class ShoppingCart:
     """
     Representa um carrinho de compras.
     """
+
     def __init__(self):
         """
         Inicializa um carrinho de compras com uma lista vazia de itens.
