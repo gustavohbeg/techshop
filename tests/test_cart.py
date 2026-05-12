@@ -104,6 +104,64 @@ def test_calculate_total_with_20_percent_discount() -> None:
     # Assert
     assert total_with_discount == 1200.0
 
+def test_add_multiple_different_items_success() -> None:
+    """
+    Testa a adição de vários produtos diferentes ao carrinho.
+    """
+    # Arrange
+    cart = ShoppingCart()
+    product1 = Product(id=1, name="Mouse", price=100.0)
+    product2 = Product(id=2, name="Teclado", price=200.0)
+    product3 = Product(id=3, name="Monitor", price=1000.0)
+    
+    # Act
+    cart.add_item(product1, 1)
+    cart.add_item(product2, 2)
+    cart.add_item(product3, 1)
+    
+    # Assert
+    assert len(cart.items) == 3
+    assert cart.items[0].product.id == 1
+    assert cart.items[1].quantity == 2
+    assert cart.items[2].product.name == "Monitor"
+
+def test_remove_item_preserves_other_items() -> None:
+    """
+    Testa se a remoção de um item específico não afeta os demais itens no carrinho.
+    """
+    # Arrange
+    cart = ShoppingCart()
+    product1 = Product(id=1, name="Mouse", price=100.0)
+    product2 = Product(id=2, name="Teclado", price=200.0)
+    cart.add_item(product1, 1)
+    cart.add_item(product2, 2)
+    
+    # Act
+    cart.remove_item(1)
+    
+    # Assert
+    assert len(cart.items) == 1
+    assert cart.items[0].product.id == 2
+    assert cart.items[0].quantity == 2
+
+def test_calculate_total_with_multiple_quantities() -> None:
+    """
+    Testa se o cálculo total lida corretamente com múltiplas quantidades de diferentes itens,
+    sem aplicar descontos.
+    """
+    # Arrange
+    cart = ShoppingCart()
+    product1 = Product(id=1, name="Cabo USB", price=20.0)
+    product2 = Product(id=2, name="Pendrive", price=50.0)
+    
+    # Act
+    cart.add_item(product1, 3) # 60.0
+    cart.add_item(product2, 2) # 100.0
+    total = cart.calculate_total()
+    
+    # Assert
+    assert total == 160.0
+
 # --- Edge Cases ---
 
 def test_calculate_total_empty_cart() -> None:
