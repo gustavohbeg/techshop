@@ -2,9 +2,9 @@
 Testes unitários para a classe ShoppingCart.
 """
 
-import pytest
 from src.models import Product
 from src.cart import ShoppingCart
+
 
 def test_add_item_success() -> None:
     """
@@ -13,14 +13,15 @@ def test_add_item_success() -> None:
     # Arrange
     cart = ShoppingCart()
     product = Product(id=1, name="Smartphone", price=1500.0)
-    
+
     # Act
     cart.add_item(product, 1)
-    
+
     # Assert
     assert len(cart.items) == 1
     assert cart.items[0].product.id == 1
     assert cart.items[0].quantity == 1
+
 
 def test_add_existing_item_updates_quantity() -> None:
     """
@@ -31,13 +32,14 @@ def test_add_existing_item_updates_quantity() -> None:
     cart = ShoppingCart()
     product = Product(id=1, name="Smartphone", price=1500.0)
     cart.add_item(product, 1)
-    
+
     # Act
     cart.add_item(product, 2)
-    
+
     # Assert
     assert len(cart.items) == 1
     assert cart.items[0].quantity == 3
+
 
 def test_remove_item_success() -> None:
     """
@@ -49,13 +51,14 @@ def test_remove_item_success() -> None:
     product2 = Product(id=2, name="Case", price=50.0)
     cart.add_item(product1, 1)
     cart.add_item(product2, 1)
-    
+
     # Act
     cart.remove_item(1)
-    
+
     # Assert
     assert len(cart.items) == 1
     assert cart.items[0].product.id == 2
+
 
 def test_calculate_total_success() -> None:
     """
@@ -67,12 +70,13 @@ def test_calculate_total_success() -> None:
     product2 = Product(id=2, name="Case", price=50.0)
     cart.add_item(product1, 2)
     cart.add_item(product2, 1)
-    
+
     # Act
     total = cart.calculate_total()
-    
+
     # Assert
     assert total == 250.0
+
 
 def test_calculate_total_with_10_percent_discount() -> None:
     """
@@ -82,12 +86,13 @@ def test_calculate_total_with_10_percent_discount() -> None:
     cart = ShoppingCart()
     product = Product(id=1, name="Smartphone", price=600.0)
     cart.add_item(product, 1)
-    
+
     # Act
     total_with_discount = cart.calculate_total_with_discount()
-    
+
     # Assert
     assert total_with_discount == 540.0
+
 
 def test_calculate_total_with_20_percent_discount() -> None:
     """
@@ -97,14 +102,16 @@ def test_calculate_total_with_20_percent_discount() -> None:
     cart = ShoppingCart()
     product = Product(id=1, name="Notebook", price=1500.0)
     cart.add_item(product, 1)
-    
+
     # Act
     total_with_discount = cart.calculate_total_with_discount()
-    
+
     # Assert
     assert total_with_discount == 1200.0
 
+
 # --- Edge Cases ---
+
 
 def test_calculate_total_empty_cart() -> None:
     """
@@ -113,14 +120,15 @@ def test_calculate_total_empty_cart() -> None:
     """
     # Arrange
     cart = ShoppingCart()
-    
+
     # Act
     total = cart.calculate_total()
     total_with_discount = cart.calculate_total_with_discount()
-    
+
     # Assert
     assert total == 0.0
     assert total_with_discount == 0.0
+
 
 def test_calculate_total_exact_discount_threshold_500() -> None:
     """
@@ -131,12 +139,13 @@ def test_calculate_total_exact_discount_threshold_500() -> None:
     cart = ShoppingCart()
     product = Product(id=1, name="Product", price=500.0)
     cart.add_item(product, 1)
-    
+
     # Act
     total_with_discount = cart.calculate_total_with_discount()
-    
+
     # Assert
     assert total_with_discount == 500.0
+
 
 def test_calculate_total_exact_discount_threshold_1000() -> None:
     """
@@ -147,12 +156,13 @@ def test_calculate_total_exact_discount_threshold_1000() -> None:
     cart = ShoppingCart()
     product = Product(id=1, name="Product", price=1000.0)
     cart.add_item(product, 1)
-    
+
     # Act
     total_with_discount = cart.calculate_total_with_discount()
-    
+
     # Assert
     assert total_with_discount == 900.0
+
 
 def test_remove_non_existent_item() -> None:
     """
@@ -163,9 +173,9 @@ def test_remove_non_existent_item() -> None:
     cart = ShoppingCart()
     product = Product(id=1, name="Product", price=500.0)
     cart.add_item(product, 1)
-    
+
     # Act
     cart.remove_item(999)
-    
+
     # Assert
     assert len(cart.items) == 1
