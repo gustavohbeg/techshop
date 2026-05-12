@@ -35,4 +35,4 @@ Por favor, descreva os testes que você executou para verificar suas alteraçõe
 - [ ] Eu fiz as alterações correspondentes na documentação.
 - [ ] Minhas alterações não geram novos avisos (warnings).
 - [ ] Eu adicionei testes que provam que minha correção é eficaz ou que minha funcionalidade funciona.
-- [ ] Testes de unidade novos e existentes passam localmente com minhas alterações..
+- [ ] Testes de unidade novos e existentes passam localmente com minhas alterações...
